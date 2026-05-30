@@ -1,0 +1,29 @@
+# Gradle build output and local cache
+.gradle/
+build/
+
+# Kotlin/Java compiled files
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.war
+*.ear
+
+# Generated application archives
+build/distributions/
+
+# Local IDE settings
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local logs
+*.log
+
+# Runtime files created by the app during manual testing
+bus_routes.json
+bus_routes.csv
