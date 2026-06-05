@@ -12,6 +12,7 @@ version = "1.0-SNAPSHOT"
 dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation(kotlin("stdlib"))
+    testImplementation(kotlin("test"))
 }
 
 application {
@@ -28,4 +29,8 @@ tasks.named<JavaExec>("run") {
     if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
         jvmArgs("-Dfile.encoding=IBM866")
     }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

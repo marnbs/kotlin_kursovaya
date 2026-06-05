@@ -1,6 +1,52 @@
 package org.example
 
+data class RouteAggregates(
+    val averageTicketPrice: Double,
+    val totalTicketPrice: Double,
+    val minTicketPrice: Double,
+    val maxTicketPrice: Double,
+    val averageTravelDurationMinutes: Double
+)
+
 object BusRouteManager {
+    fun sortByRouteNumber(routes: List<BusRoute>): List<BusRoute> =
+        routes.sortedBy { it.routeNumber.lowercase() }
+
+    fun sortByTicketPrice(routes: List<BusRoute>): List<BusRoute> =
+        routes.sortedBy { it.ticketPrice }
+
+    fun sortByTravelDuration(routes: List<BusRoute>): List<BusRoute> =
+        routes.sortedBy { it.travelDurationMinutes }
+
+    fun filterByDepartureCity(routes: List<BusRoute>, city: String): List<BusRoute> =
+        routes.filter { it.departureCity.equals(city, ignoreCase = true) }
+
+    fun filterByMaxTicketPrice(routes: List<BusRoute>, maxPrice: Double): List<BusRoute> =
+        routes.filter { it.ticketPrice <= maxPrice }
+
+    fun filterWithAvailableSeats(routes: List<BusRoute>): List<BusRoute> =
+        routes.filter { it.availableSeats > 0 }
+
+    fun findRoutes(routes: List<BusRoute>, query: String): List<BusRoute> =
+        routes.filter {
+            it.routeNumber.contains(query, ignoreCase = true) ||
+                it.departureCity.contains(query, ignoreCase = true) ||
+                it.arrivalCity.contains(query, ignoreCase = true)
+        }
+
+    fun calculateAggregates(routes: List<BusRoute>): RouteAggregates? {
+        if (routes.isEmpty()) return null
+
+        val prices = routes.map { it.ticketPrice }
+        return RouteAggregates(
+            averageTicketPrice = prices.average(),
+            totalTicketPrice = prices.sum(),
+            minTicketPrice = prices.minOrNull() ?: 0.0,
+            maxTicketPrice = prices.maxOrNull() ?: 0.0,
+            averageTravelDurationMinutes = routes.map { it.travelDurationMinutes }.average()
+        )
+    }
+
     fun addRouteInteractive() {
         println("\nДобавление нового рейса")
         val route = BusRoute(
@@ -46,9 +92,9 @@ object BusRouteManager {
         )
 
         when (readInt("Выберите пункт: ")) {
-            1 -> showRoutes(RouteStorage.routes.sortedBy { it.routeNumber.lowercase() })
-            2 -> showRoutes(RouteStorage.routes.sortedBy { it.ticketPrice })
-            3 -> showRoutes(RouteStorage.routes.sortedBy { it.travelDurationMinutes })
+            1 -> showRoutes(sortByRouteNumber(RouteStorage.routes))
+            2 -> showRoutes(sortByTicketPrice(RouteStorage.routes))
+            3 -> showRoutes(sortByTravelDuration(RouteStorage.routes))
             4 -> return
             else -> println("Ошибка: неизвестный пункт меню.")
         }
@@ -69,13 +115,13 @@ object BusRouteManager {
         val filtered = when (readInt("Выберите пункт: ")) {
             1 -> {
                 val city = readNonEmptyString("Введите город отправления: ")
-                RouteStorage.routes.filter { it.departureCity.equals(city, ignoreCase = true) }
+                filterByDepartureCity(RouteStorage.routes, city)
             }
             2 -> {
                 val maxPrice = readPositiveDouble("Введите максимальную стоимость: ")
-                RouteStorage.routes.filter { it.ticketPrice <= maxPrice }
+                filterByMaxTicketPrice(RouteStorage.routes, maxPrice)
             }
-            3 -> RouteStorage.routes.filter { it.availableSeats > 0 }
+            3 -> filterWithAvailableSeats(RouteStorage.routes)
             4 -> return
             else -> {
                 println("Ошибка: неизвестный пункт меню.")
@@ -88,11 +134,7 @@ object BusRouteManager {
 
     fun findRoutesInteractive() {
         val query = readNonEmptyString("Введите номер маршрута, город отправления или город прибытия: ")
-        val found = RouteStorage.routes.filter {
-            it.routeNumber.contains(query, ignoreCase = true) ||
-                it.departureCity.contains(query, ignoreCase = true) ||
-                it.arrivalCity.contains(query, ignoreCase = true)
-        }
+        val found = findRoutes(RouteStorage.routes, query)
 
         if (found.isEmpty()) {
             println("Не найдено.")
@@ -142,16 +184,13 @@ object BusRouteManager {
             return
         }
 
-        val prices = routes.map { it.ticketPrice }
-        val minPrice = prices.minOrNull() ?: 0.0
-        val maxPrice = prices.maxOrNull() ?: 0.0
-        val averageDuration = routes.map { it.travelDurationMinutes }.average()
+        val aggregates = calculateAggregates(routes) ?: return
 
-        println("Средняя стоимость билета: ${"%.2f".format(prices.average())}")
-        println("Общая стоимость всех билетов: ${"%.2f".format(prices.sum())}")
-        println("Минимальная стоимость билета: ${"%.2f".format(minPrice)}")
-        println("Максимальная стоимость билета: ${"%.2f".format(maxPrice)}")
-        println("Среднее время в пути: ${"%.2f".format(averageDuration)} мин.")
+        println("Средняя стоимость билета: ${"%.2f".format(aggregates.averageTicketPrice)}")
+        println("Общая стоимость всех билетов: ${"%.2f".format(aggregates.totalTicketPrice)}")
+        println("Минимальная стоимость билета: ${"%.2f".format(aggregates.minTicketPrice)}")
+        println("Максимальная стоимость билета: ${"%.2f".format(aggregates.maxTicketPrice)}")
+        println("Среднее время в пути: ${"%.2f".format(aggregates.averageTravelDurationMinutes)} мин.")
     }
 
     private fun readUniqueId(): Int {
